@@ -2,6 +2,10 @@
 #NoEnv
 #Include ..\Source\AppFactory.ahk
 
+; Un-comment these lines if you want to compile. You may need to tweak the first parameter
+;FileInstall, ..\Source\BindModeThread.ahk, BindModeThread.ahk
+;FileInstall, ..\Source\InputThread.ahk, InputThread.ahk
+
 factory := new AppFactory()
 factory.AddInputButton("HK1", "w200", Func("InputEvent").Bind("1"))
 factory.AddInputButton("HK2", "xm w200", Func("InputEvent").Bind("2"))
