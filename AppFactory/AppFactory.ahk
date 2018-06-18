@@ -9,42 +9,18 @@
 
 _AppFactoryBindMode := 0
 
-Class AppFactory {
-	InputThread := 0
+Class AppFactory extends AppFactoryGui {
 	IOControls := {}
 	GuiControls := {}
-	Settings := {}
 	
-	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
-	AddInputButton(guid, options, callback){
-		this.IOControls[guid] := new this._IOControl(this, guid, options, callback)
-		this.IOControls[guid].SetBinding(this.Settings.IOControls[guid])
-	}
-	
-	AddControl(guid, ctrltype, options, default, callback){
-		this.GuiControls[guid] := new this._GuiControl(this, guid, ctrltype, options, default, callback)
-		if (this.Settings.GuiControls.Haskey(guid)){
-			this.GuiControls[guid].SetValue(this.Settings.GuiControls[guid])
-		} else {
-			if (this.GuiControls[guid].IsListType){
-				d := RegExMatch(default, "(.*)\|\|", out)
-				default := out1
-			}
-			this.GuiControls[guid].SetValue(default)
-		}
+	__New(){
+		base.__New(true)
+		this.MainGui := this
 		
-	}
-	
-	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
-	__New(hwnd := 0){
 		this._SettingsFile := RegExReplace(A_ScriptName, ".ahk|.exe", ".ini")
 
 		this.InitBindMode()
 		this.InitInputThread()
-		
-		if (hwnd == 0)
-			Gui, +Hwndhwnd
-		this.hwnd := hwnd
 		
 		FileRead, j, % this._SettingsFile
 		if (j == ""){
@@ -56,20 +32,87 @@ Class AppFactory {
 		this.InputThread.SetDetectionState(1)
 	}
 	
+	NewGui(){
+		return new AppFactoryGui(false, this)
+	}
+}
+
+Class AppFactoryGui {
+	InputThread := 0
+	;~ IOControls := {}
+	;~ GuiControls := {}
+	Settings := {}
+	
+	Show(options := "", title := ""){
+		this.GuiCmd("Show", options, title)
+	}
+	
+	Hide(options := ""){
+		this.GuiCmd("Hide", options)
+	}
+	
+	GuiCmd(cmd, param2 := "", param3 := "", param4 := ""){
+		Gui, % this.hwnd ":" cmd, % param2, % param3, % param4
+	}
+	
+	GetMain(){
+		if (this.IsMain){
+			return this
+		} else {
+			return this.MainGui
+		}
+	}
+	
+	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
+	AddInputButton(guid, options, callback){
+		this.IOControls[guid] := new this._IOControl(this, guid, options, callback)
+		this.IOControls[guid].SetBinding(this.GetMain().Settings.IOControls[guid])
+	}
+	
+	AddControl(guid, ctrltype, options, default, callback){
+		this.GuiControls[guid] := new this._GuiControl(this, guid, ctrltype, options, default, callback)
+		if (this.GetMain().Settings.GuiControls.Haskey(guid)){
+			this.GuiControls[guid].SetValue(this.GetMain().Settings.GuiControls[guid])
+		} else {
+			if (this.GuiControls[guid].IsListType){
+				d := RegExMatch(default, "(.*)\|\|", out)
+				default := out1
+			}
+			this.GuiControls[guid].SetValue(default)
+		}
+		
+	}
+	
+	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
+	__New(isMain := false, mainGui := 0){
+		if (isMain){
+			Gui, +Hwndhwnd
+		} else {
+			Gui, New, Hwndhwnd
+		this.MainGui := mainGui
+		}
+		this.IsMain := isMain
+		this.hwnd := hwnd
+	}
+	
 	; When bind mode ends, the GuiControl will call this method to request that the setting be saved
 	_BindingChanged(ControlGuid, bo){
-		this.Settings.IOControls[ControlGuid] := bo
+		this.GetMain().Settings.IOControls[ControlGuid] := bo
 		this._SaveSettings()
 	}
 	
 	_GuiControlChanged(ControlGuid, value){
-		this.Settings.GuiControls[ControlGuid] := value
+		this.GetMain().Settings.GuiControls[ControlGuid] := value
 		this._SaveSettings()
 	}
 	
 	_SaveSettings(){
-		FileDelete, % this._SettingsFile
-		FileAppend, % JSON.Dump(this.Settings, ,true), % this._SettingsFile
+		if (!this.IsMain){
+			this.GetMain()._SaveSettings()
+		} else {
+			FileDelete, % this._SettingsFile
+			FileAppend, % JSON.Dump(this.Settings, ,true), % this._SettingsFile
+		}
 	}
 	
 	; ============================================================================================

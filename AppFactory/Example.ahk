@@ -8,7 +8,12 @@ factory.AddInputButton("HK2", "xm w200", Func("InputEvent").Bind("2"))
 factory.AddControl("MyEdit", "Edit", "xm w200", "Default Value", Func("GuiEvent").Bind("MyEdit"))
 factory.AddControl("MyDDL", "DDL", "xm w200 AltSubmit", "One||Two|Three", Func("GuiEvent").Bind("MyDDL"))
 
-Gui, Show, x0 y0
+gui2 := factory.NewGui()
+gui2.AddControl("MyEdit2", "Edit", "xm w200", "Default Value", Func("GuiEvent").Bind("MyEdit2"))
+gui2.GuiCmd("+Owner" factory.hwnd)
+gui2.Show(, "Second Gui")
+factory.Show("x0 y0")
+
 return
 
 InputEvent(ctrl, state){
