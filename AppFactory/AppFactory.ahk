@@ -16,13 +16,16 @@ Class AppFactory {
 	Settings := {}
 	
 	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
-	AddInputButton(guid, options, callback){
-		this.IOControls[guid] := new this._IOControl(this, guid, options, callback)
+	AddInputButton(guid, options, callback, buttonChangeCallback := 0){
+		ctrl := new this._IOControl(this, guid, options, callback, buttonChangeCallback)
+		this.IOControls[guid] := ctrl
 		this.IOControls[guid].SetBinding(this.Settings.IOControls[guid])
+		return ctrl
 	}
 	
 	AddControl(guid, ctrltype, options, default, callback){
-		this.GuiControls[guid] := new this._GuiControl(this, guid, ctrltype, options, default, callback)
+		ctrl := new this._GuiControl(this, guid, ctrltype, options, default, callback)
+		this.GuiControls[guid] := ctrl
 		if (this.Settings.GuiControls.Haskey(guid)){
 			this.GuiControls[guid].SetValue(this.Settings.GuiControls[guid])
 		} else {
@@ -32,7 +35,7 @@ Class AppFactory {
 			}
 			this.GuiControls[guid].SetValue(default)
 		}
-		
+		return ctrl
 	}
 	
 	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
@@ -161,10 +164,11 @@ Class AppFactory {
 		,162: {s: "^", v: "<"},163: {s: "^", v: ">"}
 		,164: {s: "!", v: "<"},165: {s: "!", v: ">"}})
 
-		__New(parent, guid, options, callback){
+		__New(parent, guid, options, callback, buttonChangeCallback := 0){
 			this.id := guid
 			this.parent := parent
 			this.Callback := callback
+			this.ButtonChangeCallback := buttonChangeCallback
 			this.BindObject := new this.parent._BindObject()
 			Gui, % this.parent.hwnd ":Add", Button, % "hwndhReadout " options , Select an Input Button
 			this.hReadout := hReadout
@@ -200,6 +204,16 @@ Class AppFactory {
 			for opt, state in bo.BindOptions {
 				this.SetMenuCheckState(opt, state)
 			}
+			; Notify change of hotkey, if requested
+			if (this.ButtonChangeCallback != 0){
+				; Fire this callback after this thread ends, so that on load, the constructor completes before this fires
+				fn := this.DoButtonChangeCallback.Bind(this)
+				SetTimer, % fn, -0
+			}
+		}
+		
+		DoButtonChangeCallback(){
+			this.ButtonChangeCallback.Call(this.BindObject)
 		}
 		
 		IOControlChoiceMade(val){
