@@ -2,19 +2,12 @@
 #include %A_LineFile%\..\BindModeThread.ahk
 #include %A_LineFile%\..\InputThread.ahk
 
-; "hotkey, if" needs to have actual #if blocks to match to, so declare empty ones
-#If _AppFactoryBindMode
-#If !_AppFactoryBindMode
-#If
-
-_AppFactoryBindMode := 0
-
 Class AppFactory {
 	InputThread := 0
 	IOControls := {}
 	GuiControls := {}
 	Settings := {}
-	_AppFactoryBindMode := 0
+	_BindMode := 0
 	
 	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
 	AddInputButton(guid, options, callback){
@@ -40,6 +33,7 @@ Class AppFactory {
 	__New(hwnd := 0, userContextFn := 0){
 		this._SettingsFile := RegExReplace(A_ScriptName, ".ahk|.exe", ".ini")
 		this._ContextFn := this._ContextCheck.Bind(this)
+		this._BindModeContextFn := this._BindModeContextCheck.Bind(this)
 		this._UserContextFn := userContextFn
 		this.InitBindMode()
 		this.InitInputThread()
@@ -59,11 +53,15 @@ Class AppFactory {
 	}
 	
 	_ContextCheck(){
-		if (this._AppFactoryBindMode)
+		if (this._BindMode)
 			return false
 		if (this._UserContextFn != 0)
 			return this._UserContextFn.Call()
 		return true
+	}
+	
+	_BindModeContextCheck(){
+		return this._BindMode
 	}
 	
 	; When bind mode ends, the GuiControl will call this method to request that the setting be saved
@@ -304,7 +302,7 @@ Class AppFactory {
 	; An additional thread that is always running and handles detection of input while in Bind Mode (User selecting hotkeys)
 	InitBindMode(){
 		
-		this._BindModeThread := new _BindMapper(this.ProcessBindModeInput.Bind(this))
+		this._BindModeThread := new _BindMapper(this.ProcessBindModeInput.Bind(this), this._BindModeContextFn)
 		
 		Gui, +HwndhOld
 		Gui, new, +HwndHwnd
@@ -340,9 +338,7 @@ Class AppFactory {
 	
 	; Turns on or off the hotkeys
 	SetHotkeyState(state){
-		global _AppFactoryBindMode
-		_AppFactoryBindMode := state
-		this._AppFactoryBindMode := state
+		this._BindMode := state
 		if (state){
 			Gui, % this.hBindModePrompt ":Show"
 			;UCR.MoveWindowToCenterOfGui(this.hBindModePrompt)
@@ -396,7 +392,6 @@ Class AppFactory {
 
 	; ====================================== INPUT THREAD ==============================================
 	InitInputThread(){
-		;~ this.InputThread := new _InputThread(this.InputEvent.Bind(this), this._UserContextFn)
 		this.InputThread := new _InputThread(this.InputEvent.Bind(this), this._ContextFn)
 	}
 	

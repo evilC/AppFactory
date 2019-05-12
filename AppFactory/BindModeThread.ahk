@@ -1,14 +1,15 @@
 class _BindMapper {
 	DetectionState := 0
 	static IOClasses := {AHK_Common: 0, AHK_KBM_Input: 0, AHK_JoyBtn_Input: 0, AHK_JoyHat_Input: 0}
-	__New(Callback){
+	__New(Callback, contextFn){
 		this.Callback := Callback
+		this._ContextFn := contextFn
 		; Instantiate each of the IOClasses specified in the IOClasses array
 		for name, state in this.IOClasses {
 			; Instantiate an instance of a class that is a child class of this one. Thanks to HotkeyIt for this code!
 			; Replace each 0 in the array with an instance of the relevant class
 			call:=this.base[name]
-			this.IOClasses[name] := new call(this.Callback)
+			this.IOClasses[name] := new call(this.Callback, this._ContextFn)
 			; debugging string
 			if (i)
 				names .= ", "
@@ -62,8 +63,9 @@ class _BindMapper {
 		static IOClass := "AHK_KBM_Input"
 		DebugMode := 2
 		
-		__New(callback){
+		__New(callback, contextFn){
 			this.Callback := callback
+			this._ContextFn := contextFn
 			this.CreateHotkeys()
 		}
 
@@ -80,7 +82,8 @@ class _BindMapper {
 		; AHK returns non-standard names for some VKs, these are patched to Standard values
 		; Numpad Enter appears to have no VK, it is synonymous with Enter (VK0xD). Seeing as VKs 0xE to 0xF are Undefined by MSDN, we use 0xE for Numpad Enter.
 		CreateHotkeys(){
-			hotkey, If, _AppFactoryBindMode
+			fn := this._ContextFn
+			hotkey, If, % fn
 			static replacements := {33: "PgUp", 34: "PgDn", 35: "End", 36: "Home", 37: "Left", 38: "Up", 39: "Right", 40: "Down", 45: "Insert", 46: "Delete"}
 			static pfx := "$*"
 			static updown := [{e: 1, s: ""}, {e: 0, s: " up"}]
@@ -136,7 +139,7 @@ class _BindMapper {
 		DebugMode := 1
 		JoystickCaps := []
 		
-		__New(callback){
+		__New(callback, contextFn){
 			this.Callback := callback
 			this.CreateHotkeys()
 		}
@@ -187,7 +190,7 @@ class _BindMapper {
 		DebugMode := 1
 		HatStrings := {}
 		
-		__New(callback){
+		__New(callback, contextFn){
 			this.Callback := callback
 			Loop 8 {
 				ji := GetKeyState(A_Index "JoyInfo")

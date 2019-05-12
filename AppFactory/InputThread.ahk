@@ -70,18 +70,8 @@ Class _InputThread {
 		}
 		
 		UpdateBinding(ControlGUID, bo){
-			;~ global CustomContext
-			;~ if (IsObject(CustomContext)){
-				;~ hotkey, If, % CustomContext
-			;~ } else {
-				;~ hotkey, If, !_AppFactoryBindMode
-			;~ }
-			if (this._ContextFn == 0){
-				hotkey, If, !_AppFactoryBindMode
-			} else {
-				fn := this._ContextFn
-				hotkey, If, % fn
-			}
+			fn := this._ContextFn
+			hotkey, If, % fn
 			this.RemoveBinding(ControlGUID)
 			if (bo.Binding[1]){
 				keyname := "$" this.BuildHotkeyString(bo)
