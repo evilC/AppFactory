@@ -6,8 +6,9 @@ Class _InputThread {
 	UpdatingBindings := 0
 	ControlMappings := {}
 	
-	__New(Callback){
+	__New(Callback, contextFn){
 		this.Callback := Callback
+		this._ContextFn := contextFn
 		names := ""
 		i := 0
 		; Instantiate each of the IOClasses specified in the IOClasses array
@@ -15,7 +16,7 @@ Class _InputThread {
 			; Instantiate an instance of a class that is a child class of this one. Thanks to HotkeyIt for this code!
 			; Replace each 0 in the array with an instance of the relevant class
 			call:=this.base[name]
-			this.IOClasses[name] := new call(this.Callback)
+			this.IOClasses[name] := new call(this.Callback, this._ContextFn)
 			; debugging string
 			if (i)
 				names .= ", "
@@ -62,13 +63,25 @@ Class _InputThread {
 		DetectionState := 0
 		_AHKBindings := {}
 		
-		__New(callback){
+		__New(callback, contextFn){
 			this.callback := callback
+			this._ContextFn := contextFn
 			;~ Suspend, On	; Start with detection off, even if we are passed bindings
 		}
 		
 		UpdateBinding(ControlGUID, bo){
-			hotkey, If, !_AppFactoryBindMode
+			;~ global CustomContext
+			;~ if (IsObject(CustomContext)){
+				;~ hotkey, If, % CustomContext
+			;~ } else {
+				;~ hotkey, If, !_AppFactoryBindMode
+			;~ }
+			if (this._ContextFn == 0){
+				hotkey, If, !_AppFactoryBindMode
+			} else {
+				fn := this._ContextFn
+				hotkey, If, % fn
+			}
 			this.RemoveBinding(ControlGUID)
 			if (bo.Binding[1]){
 				keyname := "$" this.BuildHotkeyString(bo)
@@ -183,7 +196,7 @@ Class _InputThread {
 		TimerRunning := 0
 		DetectionState := 0		; Whether or not we are allowed to have hotkeys or be running the timer
 		
-		__New(Callback){
+		__New(Callback, contextFn){
 			this.Callback := Callback
 			this.TimerFn := this.ButtonWatcher.Bind(this)
 			;~ Suspend, On	; Start with detection off, even if we are passed bindings
@@ -298,7 +311,7 @@ Class _InputThread {
 		TimerWanted := 0
 		ConnectedSticks := [0,0,0,0,0,0,0,0]
 		
-		__New(Callback){
+		__New(Callback, contextFn){
 			this.Callback := Callback
 			
 			this.TimerFn := this.HatWatcher.Bind(this)

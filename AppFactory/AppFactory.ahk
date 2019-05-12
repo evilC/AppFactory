@@ -14,6 +14,7 @@ Class AppFactory {
 	IOControls := {}
 	GuiControls := {}
 	Settings := {}
+	_AppFactoryBindMode := 0
 	
 	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
 	AddInputButton(guid, options, callback){
@@ -36,9 +37,10 @@ Class AppFactory {
 	}
 	
 	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
-	__New(hwnd := 0){
+	__New(hwnd := 0, userContextFn := 0){
 		this._SettingsFile := RegExReplace(A_ScriptName, ".ahk|.exe", ".ini")
-
+		this._ContextFn := this._ContextCheck.Bind(this)
+		this._UserContextFn := userContextFn
 		this.InitBindMode()
 		this.InitInputThread()
 		
@@ -54,6 +56,14 @@ Class AppFactory {
 		}
 		this.Settings := j
 		this.InputThread.SetDetectionState(1)
+	}
+	
+	_ContextCheck(){
+		if (this._AppFactoryBindMode)
+			return false
+		if (this._UserContextFn != 0)
+			return this._UserContextFn.Call()
+		return true
 	}
 	
 	; When bind mode ends, the GuiControl will call this method to request that the setting be saved
@@ -332,6 +342,7 @@ Class AppFactory {
 	SetHotkeyState(state){
 		global _AppFactoryBindMode
 		_AppFactoryBindMode := state
+		this._AppFactoryBindMode := state
 		if (state){
 			Gui, % this.hBindModePrompt ":Show"
 			;UCR.MoveWindowToCenterOfGui(this.hBindModePrompt)
@@ -385,7 +396,8 @@ Class AppFactory {
 
 	; ====================================== INPUT THREAD ==============================================
 	InitInputThread(){
-		this.InputThread := new _InputThread(this.InputEvent.Bind(this))
+		;~ this.InputThread := new _InputThread(this.InputEvent.Bind(this), this._UserContextFn)
+		this.InputThread := new _InputThread(this.InputEvent.Bind(this), this._ContextFn)
 	}
 	
 	InputEvent(ControlGUID, e){
