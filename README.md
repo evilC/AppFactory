@@ -57,6 +57,8 @@ TypeGreeting(state){
   }
 }
 ```
+Which would make the script look like this:  
+![](https://github.com/evilC/AppFactory/blob/master/InputControl-EditBox.gif)  
 
 ## AutoHotkey versions
 ### AHK_L (Regular AutoHotkey)  
