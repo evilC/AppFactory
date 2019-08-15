@@ -71,17 +71,31 @@ Alls scripts must reference the AppFactory library to be able to use it's functi
 ##### Persistent GuiControls  
 This can be thought of as an equivelent to AHK's [`Gui, Add`](https://www.autohotkey.com/docs/commands/Gui.htm#Add) command, except that the value of the GuiControl is remembered between runs of the script.  
 `obj := factory.AddControl(<Control Name>, <ControlType >, [<Options>, <Text>, <Callback>])`  
-**Control Name**: The name for this control  
+###### Control Name
 The unique name for this control - should ideally have no spaces.  
 This will be used by other commands to refer to this control  
-**ControlType**: One of the normal [AHK names for GuiControl types](https://www.autohotkey.com/docs/commands/Gui.htm#Add)  
-**Options** (Optional): Options for the GuiControl (To control position, size etc)  
+###### ControlType
+One of the normal [AHK names for GuiControl types](https://www.autohotkey.com/docs/commands/Gui.htm#Add)  
+###### Options
+(Optional) Options for the GuiControl (To control position, size etc)  
 Uses the same format as if you were doing a normal AHK `Gui, Add` command  
-**Text** (Optional): Performs the same function as the Text parameter of Gui, Add (Sets default value etc)  
-**Callback** (Optional): A Function Object that is to be called whenever the contents of the control changes.  
-**Return Value**: A reference to the GuiControl object is returned by this function (`obj` in the above example), which may optionally be stored in a variable.  
+###### Text
+(Optional) Performs the same function as the Text parameter of Gui, Add (Sets default value etc)  
+###### Callback
+(Optional) A Function Object that is to be called whenever the contents of the control changes.  
+The callback function is passed the new value of the control, eg:  
+```
+factory.AddControl("UserName", "Edit", "xm w200", "Default Value", Func("MyFunc"))
+; ...
+MyFunc(value){
+  ; value holds the new value of the control
+}
+```
+###### Return Value
+A reference to the GuiControl object is returned by this function (`obj` in the above example), which may optionally be stored in a variable.  
 
-**Examples**:
+###### Examples
 `factory.AddControl("UserName", "Edit", "xm w200")` Create a control called `UserName`, of type `Edit`, positioned against the left margin, with a width of 200px  
 `factory.AddControl("UserName", "Edit", "xm w200", "Default Value")` As before, but with a default value of `Default Value`  
 `factory.AddControl("UserName", "Edit", "xm w200", "Default Value", Func("MyFunc"))` As before, but when the user types something in the Edit box, as each character is typed, fire the function `MyFunc` and pass it the new value  
+
