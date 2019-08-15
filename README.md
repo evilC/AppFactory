@@ -31,7 +31,8 @@ When the user clicks the GuiControl, they are presented with a menu with the fol
 **Select Binding**  
 Allows to press the key combination they wish to use.  
 **Block**  
-Suppresses the underlying function of the key - eg for the hotkey `a`, then Block On is equivalent to a hotkey of `a::` and Block Off is equivalent to a hotkey of `~a::`  
+Suppresses the underlying function of the key  
+eg for the hotkey `a`, then Block On is equivalent to a hotkey of `a::` and Block Off is equivalent to a hotkey of `~a::`  
 **Suppress Repeats**  
 Off: If the user holds the key, the hotkey will be repeatedly fired, due to key repeat.  
 On: If the user holds the key, the hotkey will only be fired once.  
