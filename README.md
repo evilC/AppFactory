@@ -70,8 +70,8 @@ Alls scripts must reference the AppFactory library to be able to use it's functi
 
 ##### Persistent GuiControls  
 This can be thought of as an equivelent to AHK's [`Gui, Add`](https://www.autohotkey.com/docs/commands/Gui.htm#Add) command, except that the value of the GuiControl is remembered between runs of the script.  
-`obj := factory.AddControl(<Control Name>, <ControlType >, [<Options>, <Text>, <Callback>])`  
-###### Control Name
+`obj := factory.AddControl(<ControlName>, <ControlType >, [<Options>, <Text>, <Callback>])`  
+###### ControlName
 The unique name for this control - should ideally have no spaces.  
 This will be used by other commands to refer to this control  
 ###### ControlType
@@ -99,3 +99,17 @@ A reference to the GuiControl object is returned by this function (`obj` in the 
 `factory.AddControl("UserName", "Edit", "xm w200", "Default Value")` As before, but with a default value of `Default Value`  
 `factory.AddControl("UserName", "Edit", "xm w200", "Default Value", Func("MyFunc"))` As before, but when the user types something in the Edit box, as each character is typed, fire the function `MyFunc` and pass it the new value  
 
+###### Accessing the value of Persistent GuiControls via their objects
+The current value of a GuiControl can be retreived by calling `Get()` on the GuiControl object.  
+There are two ways to get access to the GuiControl object  
+1. Via the optional returned object 
+```
+obj := factory.AddControl(...
+currentValue := obj.Get()
+```
+1. Via the `GuiControls` property of the factory object  
+```
+factory.AddControl("MyControl", ...
+obj := factory.GuiControls.MyControl
+currentValue := obj.Get()
+```
