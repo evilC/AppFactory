@@ -1,7 +1,7 @@
 # AppFactory
 A library for creating Apps with configurable inputs and settings.  
 
-##[Discussion Thread on AHK forums](https://www.autohotkey.com/boards/viewtopic.php?t=38651)  
+## [Discussion Thread on AHK forums](https://www.autohotkey.com/boards/viewtopic.php?t=38651)  
 
 ## What does it do?
 In a typical AutoHotkey script, you declare a hotkey, and have it call some code when that hotkey is pressed, eg:
