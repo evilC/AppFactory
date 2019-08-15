@@ -25,6 +25,22 @@ TypeGreeting(state){
 }
 ```
 
+This would add a GuiControl like this to the script's GUI:  
+![](https://github.com/evilC/AppFactory/blob/master/InputControl-Binding.gif)  
+When the user clicks the GuiControl, they are presented with a menu with the following options:  
+**Select Binding**  
+Allows to press the key combination they wish to use.  
+**Block**  
+Suppresses the underlying function of the key - eg for the hotkey `a`, then Block On is equivalent to a hotkey of `a::` and Block Off is equivalent to a hotkey of `~a::`  
+**Suppress Repeats**  
+Off: If the user holds the key, the hotkey will be repeatedly fired, due to key repeat.  
+On: If the user holds the key, the hotkey will only be fired once.  
+**Wild**  
+Allows the hotkey to fire, even if modifiers are held.  
+eg for the hotkey `a`, then Wild On is equivalent to a hotkey of `*a::` and Wild Off is equivalent to a hotkey of `a::`  
+**Clear**  
+Removes the hotkey binding
+
 AppFactory also allows the script author to add "Persistent GuiControls" to their scripts (Edit boxes, check boxes, drop down lists etc) and the state of these are also saved to the settings file. This allows you to easily add configurable options to your scripts.  
 Extending the above example, everybody is obviously not called `evilC`, so you would probably want to allow users of your script to set their own name. This can be done using a custom EditBox:
 
