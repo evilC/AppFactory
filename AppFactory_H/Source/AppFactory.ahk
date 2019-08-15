@@ -14,7 +14,7 @@ Class AppFactory {
 		this.IOControls[guid].SetBinding(this.Settings.IOControls[guid])
 	}
 	
-	AddControl(guid, ctrltype, options, default, callback){
+	AddControl(guid, ctrltype, options := "", default := "", callback := 0){
 		this.GuiControls[guid] := new this._GuiControl(this, guid, ctrltype, options, default, callback)
 		if (this.Settings.GuiControls.Haskey(guid)){
 			this.GuiControls[guid].SetValue(this.Settings.GuiControls[guid])
@@ -127,7 +127,9 @@ Class AppFactory {
 		ControlChanged(){
 			GuiControlGet, value, % this.parent.hwnd ":" , % this.hwnd
 			this._Value := value
-			this.Callback.call(value)
+			if (this.Callback != 0){
+				this.Callback.call(value)
+			}
 			this.parent._GuiControlChanged(this.id, value)
 		}
 		
