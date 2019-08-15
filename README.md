@@ -67,6 +67,24 @@ Alls scripts must reference the AppFactory library to be able to use it's functi
 
 #### Adding GuiControls
 ##### Hotkey GuiControls
+These allow you to associate an end-user defined key sequence with a specific piece of code  
+`factory.AddInputButton(<ControlName>, <Options>, <Callback>)`  
+###### ControlName
+The unique name for this control - should ideally have no spaces.  
+This will be used by other commands to refer to this control  
+###### Options
+Options for the GuiControl (To control position, size etc)  
+Uses the same format as if you were doing a normal AHK [`Gui, Add`](https://www.autohotkey.com/docs/commands/Gui.htm#Add) command
+###### Callback
+The function to call when the hotkey changes state (The user presses or releases the hotkey)  
+The callback function is passed the state of the hotkey, eg: 
+```
+factory.AddInputButton("HK1", "w200", Func("InputEvent"))
+; ...
+InputEvent(state){
+  ; state will be 1 when the hotkey is pressed, 0 when the hotkey is released
+}
+```
 
 ##### Persistent GuiControls  
 This can be thought of as an equivelent to AHK's [`Gui, Add`](https://www.autohotkey.com/docs/commands/Gui.htm#Add) command, except that the value of the GuiControl is remembered between runs of the script.  
@@ -107,7 +125,7 @@ There are two ways to get access to the GuiControl object
 obj := factory.AddControl(...
 currentValue := obj.Get()
 ```
-1. Via the `GuiControls` property of the factory object  
+2. Via the `GuiControls` property of the factory object  
 ```
 factory.AddControl("MyControl", ...
 obj := factory.GuiControls.MyControl
