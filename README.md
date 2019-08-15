@@ -33,12 +33,12 @@ Allows to press the key combination they wish to use.
 **Block**  
 Suppresses the underlying function of the key  
 eg for the hotkey `a`, then Block On is equivalent to a hotkey of `a::` and Block Off is equivalent to a hotkey of `~a::`  
-**Suppress Repeats**  
-Off: If the user holds the key, the hotkey will be repeatedly fired, due to key repeat.  
-On: If the user holds the key, the hotkey will only be fired once.  
 **Wild**  
 Allows the hotkey to fire, even if modifiers are held.  
 eg for the hotkey `a`, then Wild On is equivalent to a hotkey of `*a::` and Wild Off is equivalent to a hotkey of `a::`  
+**Suppress Repeats**  
+Off: If the user holds the key, the hotkey will be repeatedly fired, due to key repeat.  
+On: If the user holds the key, the hotkey will only be fired once.  
 **Clear**  
 Removes the hotkey binding
 
