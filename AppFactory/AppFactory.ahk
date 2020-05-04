@@ -13,6 +13,7 @@ Class AppFactory {
 	InputThread := 0
 	IOControls := {}
 	GuiControls := {}
+	CustomSettings := {}
 	Settings := {}
 	
 	; ====================== PUBLIC METHODS. USER SCRIPTS SHOULD ONLY CALL THESE ========================
@@ -32,7 +33,24 @@ Class AppFactory {
 			}
 			this.GuiControls[guid].SetValue(default)
 		}
-		
+	}
+	
+	AddCustomSetting(guid, default){
+		if (this.Settings.CustomSettings.HasKey(guid)){
+			this.CustomSettings[guid] := new this._CustomSetting(this, guid, this.Settings.CustomSettings[guid])
+		} else {
+			this.CustomSettings[guid] := new this._CustomSetting(this, guid, default)
+		}
+	}
+	
+	BuildDdlListFromArray(arr){
+		list := ""
+		for k, v in arr {
+			if (list != "")
+				list .= "|"
+			list .= v
+		}
+		return list
 	}
 	
 	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
@@ -48,7 +66,7 @@ Class AppFactory {
 		
 		FileRead, j, % this._SettingsFile
 		if (j == ""){
-			j := {IOControls: {}, GuiControls: {}}
+			j := {IOControls: {}, GuiControls: {}, CustomSettings: {}}
 		} else {
 			j := JSON.Load(j)
 		}
@@ -64,6 +82,11 @@ Class AppFactory {
 	
 	_GuiControlChanged(ControlGuid, value){
 		this.Settings.GuiControls[ControlGuid] := value
+		this._SaveSettings()
+	}
+	
+	_CustomSettingChanged(SettingGuid, value){
+		this.Settings.CustomSettings[SettingGuid] := value
 		this._SaveSettings()
 	}
 	
@@ -88,6 +111,7 @@ Class AppFactory {
 			this.parent := parent
 			this.Callback := callback
 			this.Default := default
+			this.ctrltype := ctrltype
 			
 			if (ObjHasKey(this._ListTypes, ctrltype)){
 				this.IsListType := 1
@@ -146,6 +170,39 @@ Class AppFactory {
 			this._Value := value
 			this.Callback.call(value)
 			this.SetControlState(value)
+		}
+		
+		; https://docs.microsoft.com/en-us/windows/win32/controls/individual-control-info
+		; https://github.com/tpn/winsdk-10/blob/master/Include/10.0.10240.0/um/WinUser.h
+		AddItem(item){
+			static messageNames := {ListBox: "LB_ADDSTRING", DDL: "CB_ADDSTRING", DropDownList: "CB_ADDSTRING", ComboBox: "CB_ADDSTRING"}
+			static messages := {LB_ADDSTRING: 0x0180, CB_ADDSTRING: 0x143}
+			
+			if (!messageNames.HasKey(this.ctrltype)){
+				msgbox % "Cannot add item to control" this.id ", as it is not supported type"
+				ExitApp
+			}
+			hwnd := this.hwnd
+			msgName := messageNames[this.ctrltype]
+			msg := messages[msgName]
+			SendMessage, % msg,, % "" item "",, % "ahk_id " hwnd
+		}
+		
+		RemoveItem(item){
+			static messageNames := {ListBox: "LB_DELETESTRING", DDL: "CB_DELETESTRING", DropDownList: "CB_DELETESTRING", ComboBox: "CB_DELETESTRING"}
+			static messages := {LB_DELETESTRING: 0x0182, CB_DELETESTRING: 0x0144}
+			
+			if (!messageNames.HasKey(this.ctrltype)){
+				msgbox % "Cannot remove item from control" this.id ", as it is not supported type"
+				ExitApp
+			}
+			hwnd := this.hwnd
+			msgName := messageNames[this.ctrltype]
+			msg := messages[msgName]
+			SendMessage, % msg,, % "" item "",, % "ahk_id " hwnd
+			
+			this.SetValue("")
+			this.ControlChanged()
 		}
 	}
 	
@@ -289,6 +346,26 @@ Class AppFactory {
 		; Renders the keycode of a Modifier to it's AHK Hotkey symbol (eg 162 for LCTRL to ^)
 		RenderModifier(code){
 			return this._Modifiers[code].s
+		}
+	}
+
+	; ============================================================================================
+	; ================================== CUSTOM SETTINGS =========================================
+	; ============================================================================================
+	class _CustomSetting {
+		__New(parent, guid, value){
+			this.id := guid
+			this.parent := parent
+			this._value := value
+		}
+		
+		Get(){
+			return this._value
+		}
+		
+		SetValue(value){
+			this._value := value
+			this.parent._CustomSettingChanged(this.id, value)
 		}
 	}
 	
