@@ -36,7 +36,7 @@ Add:
 Remove:
 	item := factory.GuiControls.DDDL.Get()
 	; Remove item from GuiControl
-	factory.GuiControls.DDDL.RemoveItem(item)
+	factory.GuiControls.DDDL.RemoveCurrentItem()
 	; Remove item from DDDL_Contents CustomSetting
 	value := factory.CustomSettings.DDDL_Contents.Get()
 	Loop % value.Length() {

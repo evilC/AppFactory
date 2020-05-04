@@ -188,18 +188,27 @@ Class AppFactory {
 			SendMessage, % msg,, % "" item "",, % "ahk_id " hwnd
 		}
 		
-		RemoveItem(item){
-			static messageNames := {ListBox: "LB_DELETESTRING", DDL: "CB_DELETESTRING", DropDownList: "CB_DELETESTRING", ComboBox: "CB_DELETESTRING"}
-			static messages := {LB_DELETESTRING: 0x0182, CB_DELETESTRING: 0x0144}
+		RemoveCurrentItem(){
+			static getMessageNames := {ListBox: "LB_GETCURSEL", DDL: "CB_GETCURSEL", DropDownList: "CB_GETCURSEL", ComboBox: "CB_GETCURSEL"}
+			static removeMessageNames := {ListBox: "LB_DELETESTRING", DDL: "CB_DELETESTRING", DropDownList: "CB_DELETESTRING", ComboBox: "CB_DELETESTRING"}
+			static setMessageNames := {ListBox: "LB_SETCURSEL", DDL: "CB_SETCURSEL", DropDownList: "CB_SETCURSEL", ComboBox: "CB_SETCURSEL"}
+			static messages := {LB_GETCURSEL: 0x0188, CB_GETCURSEL: 0x0147, LB_DELETESTRING: 0x0182, CB_DELETESTRING: 0x0144, CB_SETCURSEL: 0x014E, LB_SETCURSEL: 0x0186}
 			
-			if (!messageNames.HasKey(this.ctrltype)){
+			if (!removeMessageNames.HasKey(this.ctrltype)){
 				msgbox % "Cannot remove item from control" this.id ", as it is not supported type"
 				ExitApp
 			}
 			hwnd := this.hwnd
-			msgName := messageNames[this.ctrltype]
+			msgName := getMessageNames[this.ctrltype]
 			msg := messages[msgName]
-			SendMessage, % msg,, % "" item "",, % "ahk_id " hwnd
+			SendMessage, % msg,,,, % "ahk_id " hwnd ;CB_GETCURSEL
+			id := ErrorLevel
+			msgName := removeMessageNames[this.ctrltype]
+			msg := messages[msgName]
+			SendMessage,0x144, % id,,,% "ahk_id " hwnd ;CB_DELETESTRING
+			msgName := setMessageNames[this.ctrltype]
+			msg := messages[msgName]
+			SendMessage,% msg,% "",,,% "ahk_id " hwnd ;CB_SETCURSEL
 			
 			this.SetValue("")
 			this.ControlChanged()
