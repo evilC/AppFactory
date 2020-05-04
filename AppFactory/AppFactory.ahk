@@ -22,6 +22,13 @@ Class AppFactory {
 		this.IOControls[guid].SetBinding(this.Settings.IOControls[guid])
 	}
 	
+	RemoveInputButton(guid){
+		this.InputThread.RemoveBinding(guid)
+		this.IOControls.Delete(guid)
+		this.Settings.IOControls.Delete(guid)
+		this._SaveSettings()
+	}
+	
 	AddControl(guid, ctrltype, options := "", default := "", callback := 0){
 		this.GuiControls[guid] := new this._GuiControl(this, guid, ctrltype, options, default, callback)
 		if (this.Settings.GuiControls.Haskey(guid)){
@@ -253,7 +260,10 @@ Class AppFactory {
 			
 			fn := this.IOControlChoiceMade.Bind(this, 5)
 			Menu, % this.id, Add, % "Clear", % fn
-			
+		}
+		
+		SetVisible(state){
+			GuiControl, % (state ? "SHow" : "Hide"), % this.hReadout
 		}
 		
 		SetBinding(bo){

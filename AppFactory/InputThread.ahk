@@ -46,6 +46,11 @@ Class _InputThread {
 		this.IOClasses[bo.IOClass].UpdateBinding(ControlGUID, bo)
 	}
 	
+	RemoveBinding(ControlGUID){
+		iom := this.ControlMappings[ControlGuid]
+		this.IOClasses[iom].RemoveBinding(ControlGUID)
+	}
+	
 	;~ _SetDetectionState(state){
 	SetDetectionState(state){
 		OutputDebug % "UCR| InputThread: Hotkey detection " (state ? "On" : "Off")
