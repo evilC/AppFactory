@@ -1,5 +1,8 @@
-; Can use  #Include %A_LineFile%\..\other.ahk to include in same folder
-Class _InputThread {
+InPutThread_Script =
+ (
+
+
+ Class _InputThread {
 	static IOClasses := {AHK_KBM_Input: 0, AHK_JoyBtn_Input: 0, AHK_JoyHat_Input: 0}
 	DetectionState := 0
 	UpdateBindingQueue := []	; An array of bindings waiting to be updated.
@@ -25,9 +28,9 @@ Class _InputThread {
 			i++
 		}
 		if (i){
-			; OutputDebug % "UCR| Input Thread loaded IOClasses: " names
+			; OutputDebug `% "UCR| Input Thread loaded IOClasses: " names
 		} else {
-			OutputDebug % "UCR| Input Thread WARNING! Loaded No IOClasses!"
+			OutputDebug `% "UCR| Input Thread WARNING! Loaded No IOClasses!"
 		}
 		
 		; Set up interfaces that the main thread can call
@@ -47,20 +50,30 @@ Class _InputThread {
 	}
 
 	UpdateBinding(ControlGUID, boPtr){
+		; msgbox, `% boPtr
 		bo := ObjShare(boPtr).clone()
 		iom := this.ControlMappings[ControlGuid]
 		if (this.ControlMappings.HasKey(ControlGuid) && iom != bo.IOClass){
 			this.IOClasses[iom].RemoveBinding(ControlGUID)
 		}
 		this.ControlMappings[ControlGuid] := bo.IOClass
-		;OutputDebug % "UCR| Updating binding for ControlGUID " ControlGUID ", IOClass " bo.IOClass
+		;OutputDebug `% "UCR| Updating binding for ControlGUID " ControlGUID ", IOClass " bo.IOClass
 		; Direct the request to the appropriate IOClass that handles it
+		try
 		this.IOClasses[bo.IOClass].UpdateBinding(ControlGUID, bo)
+		Catch, e
+		{
+			loop, `% bo.Binding.MaxIndex()
+			bo.Binding[A_Index]:=""
+			this._BindModeEnded(callback, bo)
+		Gui +OwnDialogs
+		MsgBox 0x40030, Not a Valid hotkey,`% "+ + .... This is not a Valid Hotkey" 
+		}
 	}
 	
 	;~ _SetDetectionState(state){
 	SetDetectionState(state){
-		OutputDebug % "UCR| InputThread: Hotkey detection " (state ? "On" : "Off")
+		OutputDebug `% "UCR| InputThread: Hotkey detection " (state ? "On" : "Off")
 		if (state == this.DetectionState)
 			return
 		this.DetectionState := state
@@ -84,10 +97,10 @@ Class _InputThread {
 			if (bo.Binding[1]){
 				keyname := "$" this.BuildHotkeyString(bo)
 				fn := this.KeyEvent.Bind(this, ControlGUID, 1)
-				hotkey, % keyname, % fn, On
+				hotkey, `% keyname, `% fn, On
 				fn := this.KeyEvent.Bind(this, ControlGUID, 0)
-				hotkey, % keyname " up", % fn, On
-				;OutputDebug % "UCR| AHK_KBM_Input Added hotkey " keyname " for ControlGUID " ControlGUID
+				hotkey, `% keyname " up", `% fn, On
+				;OutputDebug `% "UCR| AHK_KBM_Input Added hotkey " keyname " for ControlGUID " ControlGUID
 				this._AHKBindings[ControlGUID] := keyname
 			}
 		}
@@ -97,8 +110,8 @@ Class _InputThread {
 			; This code is rigged so that either AHK_KBM_Input or AHK_JoyBtn_Input or both will not clash...
 			; ... As long as all are turned on or off together, you won't get weird results.
 			if (A_IsSuspended == state){
-				;OutputDebug % "UCR| Thread: AHK_KBM_Input IOClass turning Hotkey detection " (state ? "On" : "Off")
-				Suspend, % (state ? "Off" : "On")
+				;OutputDebug `% "UCR| Thread: AHK_KBM_Input IOClass turning Hotkey detection " (state ? "On" : "Off")
+				Suspend, `% (state ? "Off" : "On")
 			}
 			this.DetectionState := state
 		}
@@ -106,19 +119,19 @@ Class _InputThread {
 		RemoveBinding(ControlGUID){
 			keyname := this._AHKBindings[ControlGUID]
 			if (keyname){
-				;OutputDebug % "UCR| AHK_KBM_Input Removing hotkey " keyname " for ControlGUID " ControlGUID
-				hotkey, % keyname, UCR_INPUTHREAD_DUMMY_LABEL
-				hotkey, % keyname, Off
-				hotkey, % keyname " up", UCR_INPUTHREAD_DUMMY_LABEL
-				hotkey, % keyname " up", Off
+				;OutputDebug `% "UCR| AHK_KBM_Input Removing hotkey " keyname " for ControlGUID " ControlGUID
+				hotkey, `% keyname, UCR_INPUTHREAD_DUMMY_LABEL
+				hotkey, `% keyname, Off
+				hotkey, `% keyname " up", UCR_INPUTHREAD_DUMMY_LABEL
+				hotkey, `% keyname " up", Off
 				this._AHKBindings.Delete(ControlGUID)
 			}
 		}
 		
 		KeyEvent(ControlGUID, e){
-			;OutputDebug % "UCR| AHK_KBM_Input Key event for GuiControl " ControlGUID
+			;OutputDebug `% "UCR| AHK_KBM_Input Key event for GuiControl " ControlGUID
 			fn := this.InputEvent.Bind(this, ControlGUID, e)
-			SetTimer, % fn, -0
+			SetTimer, `% fn, -0
 		}
 		
 		InputEvent(ControlGUID, state){
@@ -135,7 +148,7 @@ Class _InputThread {
 			if (!bo.BindOptions.Block)
 				str .= "~"
 			max := bo.Binding.Length()
-			Loop % max {
+			Loop `% max {
 				key := bo.Binding[A_Index]
 				if (A_Index = max){
 					islast := 1
@@ -206,11 +219,11 @@ Class _InputThread {
 				fn := this.KeyEvent.Bind(this, ControlGUID, 1)
 				if (GetKeyState(bo.DeviceID "JoyAxes")) 
 					try {
-						hotkey, % keyname, % fn, On
+						hotkey, `% keyname, `% fn, On
 					}
 				else
-					OutputDebug % "UCR| Warning! AHK_JoyBtn_Input did not declare hotkey " keyname " because the stick is disconnected"
-				;OutputDebug % "UCR| AHK_JoyBtn_Input Added hotkey " keyname " for ControlGUID " ControlGUID
+					OutputDebug `% "UCR| Warning! AHK_JoyBtn_Input did not declare hotkey " keyname " because the stick is disconnected"
+				;OutputDebug `% "UCR| AHK_JoyBtn_Input Added hotkey " keyname " for ControlGUID " ControlGUID
 				this._AHKBindings[ControlGUID] := keyname
 			}
 		}
@@ -218,8 +231,8 @@ Class _InputThread {
 		SetDetectionState(state){
 			; Are we already in the requested state?
 			if (A_IsSuspended == state){
-				;OutputDebug % "UCR| Thread: AHK_JoyBtn_Input IOClass turning Hotkey detection " (state ? "On" : "Off")
-				Suspend, % (state ? "Off" : "On")
+				;OutputDebug `% "UCR| Thread: AHK_JoyBtn_Input IOClass turning Hotkey detection " (state ? "On" : "Off")
+				Suspend, `% (state ? "Off" : "On")
 			}
 			this.DetectionState := state
 			this.ProcessTimerState()
@@ -228,12 +241,12 @@ Class _InputThread {
 		RemoveBinding(ControlGUID){
 			keyname := this._AHKBindings[ControlGUID]
 			if (keyname){
-				;OutputDebug % "UCR| AHK_JoyBtn_Input Removing hotkey " keyname " for ControlGUID " ControlGUID
+				;OutputDebug `% "UCR| AHK_JoyBtn_Input Removing hotkey " keyname " for ControlGUID " ControlGUID
 				try{
-					hotkey, % keyname, UCR_INPUTHREAD_DUMMY_LABEL
+					hotkey, `% keyname, UCR_INPUTHREAD_DUMMY_LABEL
 				}
 				try{
-					hotkey, % keyname, Off
+					hotkey, `% keyname, Off
 				}
 				this._AHKBindings.Delete(ControlGUID)
 			}
@@ -243,10 +256,10 @@ Class _InputThread {
 		KeyEvent(ControlGUID, e){
 			; ToDo: Parent will not exist in thread!
 			
-			;OutputDebug % "UCR| AHK_JoyBtn_Input Key event " e " for GuiControl " ControlGUID
+			;OutputDebug `% "UCR| AHK_JoyBtn_Input Key event " e " for GuiControl " ControlGUID
 			;this.Callback.Call(ControlGUID, e)
 			fn := this.InputEvent.Bind(this, ControlGUID, e)
-			SetTimer, % fn, -0
+			SetTimer, `% fn, -0
 			
 			this.HeldButtons[this._AHKBindings[ControlGUID]] := ControlGUID
 			if (!this.TimerWanted){
@@ -263,10 +276,10 @@ Class _InputThread {
 			for bindstring, ControlGUID in this.HeldButtons {
 				if (!GetKeyState(bindstring)){
 					this.HeldButtons.Delete(bindstring)
-					;OutputDebug % "UCR| AHK_JoyBtn_Input Key event 0 for GuiControl " ControlGUID
+					;OutputDebug `% "UCR| AHK_JoyBtn_Input Key event 0 for GuiControl " ControlGUID
 					;this.Callback.Call(ControlGUID, 0)
 					fn := this.InputEvent.Bind(this, ControlGUID, 0)
-					SetTimer, % fn, -0
+					SetTimer, `% fn, -0
 					if (IsEmptyAssoc(this.HeldButtons)){
 						this.TimerWanted := 0
 						this.ProcessTimerState()
@@ -279,13 +292,13 @@ Class _InputThread {
 		ProcessTimerState(){
 			fn := this.TimerFn
 			if (this.TimerWanted && this.DetectionState && !this.TimerRunning){
-				SetTimer, % fn, 10
+				SetTimer, `% fn, 10
 				this.TimerRunning := 1
-				;OutputDebug % "UCR| AHK_JoyBtn_Input Started ButtonWatcher " ControlGUID
+				;OutputDebug `% "UCR| AHK_JoyBtn_Input Started ButtonWatcher " ControlGUID
 			} else if ((!this.TimerWanted || !this.DetectionState) && this.TimerRunning){
-				SetTimer, % fn, Off
+				SetTimer, `% fn, Off
 				this.TimerRunning := 0
-				;OutputDebug % "UCR| AHK_JoyBtn_Input Stopped ButtonWatcher " ControlGUID
+				;OutputDebug `% "UCR| AHK_JoyBtn_Input Stopped ButtonWatcher " ControlGUID
 			}
 		}
 
@@ -321,7 +334,7 @@ Class _InputThread {
 		
 		; Request from main thread to update binding
 		UpdateBinding(ControlGUID, bo){
-			;OutputDebug % "UCR| AHK_JoyHat_Input " (bo.Binding[1] ? "Update" : "Remove" ) " Hat Binding - Device: " bo.DeviceID ", Direction: " bo.Binding[1]
+			;OutputDebug `% "UCR| AHK_JoyHat_Input " (bo.Binding[1] ? "Update" : "Remove" ) " Hat Binding - Device: " bo.DeviceID ", Direction: " bo.Binding[1]
 			this._UpdateArrays(ControlGUID, bo)
 			this.TimerWanted := !IsEmptyAssoc(this.ControlMappings)
 			this.ProcessTimerState()
@@ -339,13 +352,13 @@ Class _InputThread {
 				Loop 8 {
 					this.ConnectedSticks[A_Index] := GetKeyState(A_Index "JoyInfo")
 				}
-				SetTimer, % fn, 10
+				SetTimer, `% fn, 10
 				this.TimerRunning := 1
-				;OutputDebug % "UCR| AHK_JoyHat_Input Started HatWatcher"
+				;OutputDebug `% "UCR| AHK_JoyHat_Input Started HatWatcher"
 			} else if ((!this.TimerWanted || !this.DetectionState) && this.TimerRunning){
-				SetTimer, % fn, Off
+				SetTimer, `% fn, Off
 				this.TimerRunning := 0
-				;OutputDebug % "UCR| AHK_JoyHat_Input Stopped HatWatcher"
+				;OutputDebug `% "UCR| AHK_JoyHat_Input Stopped HatWatcher"
 			}
 		}
 
@@ -358,7 +371,7 @@ Class _InputThread {
 				this.ControlMappings.Delete(ControlGUID)
 				if (IsEmptyAssoc(this.HatBindings[bindstring])){
 					this.HatBindings.Delete(bindstring)
-					;OutputDebug % "UCR| AHK_JoyHat_Input Removing Hat Bindstring " bindstring
+					;OutputDebug `% "UCR| AHK_JoyHat_Input Removing Hat Bindstring " bindstring
 				}
 			}
 			if (bo != 0 && bo.Binding[1]){
@@ -366,7 +379,7 @@ Class _InputThread {
 				bindstring := bo.DeviceID "JoyPOV"
 				if (!ObjHasKey(this.HatBindings, bindstring)){
 					this.HatBindings[bindstring] := {}
-					;OutputDebug % "UCR| AHK_JoyHat_Input Adding Hat Bindstring " bindstring
+					;OutputDebug `% "UCR| AHK_JoyHat_Input Adding Hat Bindstring " bindstring
 				}
 				this.HatBindings[bindstring, ControlGUID] := {dir: bo.Binding[1], state: 0}
 				this.ControlMappings[ControlGUID] := {bindstring: bindstring}
@@ -386,11 +399,11 @@ Class _InputThread {
 					new_state := (this.PovMap[state, obj.dir] == 1)
 					if (obj.state != new_state){
 						obj.state := new_state
-						;OutputDebug % "UCR| InputThread: AHK_JoyHat_Input Direction " obj.dir " state " new_state " calling ControlGUID " ControlGUID
+						;OutputDebug `% "UCR| InputThread: AHK_JoyHat_Input Direction " obj.dir " state " new_state " calling ControlGUID " ControlGUID
 						; Use the thread-safe object to tell the main thread that the hat direction changed state
 						;this.Callback.Call(ControlGUID, new_state)
 						fn := this.InputEvent.Bind(this, ControlGUID, new_state)
-						SetTimer, % fn, -0
+						SetTimer, `% fn, -0
 					}
 				}
 			}
@@ -400,9 +413,19 @@ Class _InputThread {
 			this.Callback.Call(ControlGUID, state)
 		}
 	}	
-}
+ }
 
-; Is an associative array empty?
-IsEmptyAssoc(assoc){
+ ; Is an associative array empty?
+ IsEmptyAssoc(assoc){
 	return !assoc._NewEnum()[k, v]
-}
+ }
+
+  ObjShare(obj){
+	static IDispatch,set:=VarSetCapacity(IDispatch, 16), init := NumPut(0x46000000000000c0, NumPut(0x20400, IDispatch, "int64"), "int64")
+	if IsObject(obj)
+		return  LresultFromObject(&IDispatch, 0, &obj)
+	else if ObjectFromLresult(obj, &IDispatch, 0, getvar(com:=0))
+		return MessageBox(NULL,A_ThisFunc ": LResult Object could not be created","Error",0)
+	return ComObject(9,com,1)
+ }
+ )
