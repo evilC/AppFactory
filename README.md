@@ -76,7 +76,7 @@ If a new version of AHK comes out, you may or may not need to replace the EXE ag
 
 ### Usage
 #### Including the library
-Alls scripts must reference the AppFactory library to be able to use it's functions
+All scripts must reference the AppFactory library to be able to use it's functions
 ##### AHK_L (Regular AutoHotkey)
 `#Include AppFactory.ahk`
 ##### AHK_H
