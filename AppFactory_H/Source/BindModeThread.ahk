@@ -1,4 +1,8 @@
+
+BindModeThread_Script =
+(
 #NoEnv
+
 /*
 Handles binding of the hotkeys for Bind Mode
 Runs as a separate thread to the main application,
@@ -29,9 +33,9 @@ class _BindMapper {
 			i++
 		}
 		if (i){
-			;OutputDebug % "UCR| Bind Mode Thread loaded IOClasses: " names
+			;OutputDebug `% "UCR| Bind Mode Thread loaded IOClasses: " names
 		} else {
-			OutputDebug % "UCR| Bind Mode Thread WARNING! Loaded No IOClasses!"
+			OutputDebug `% "UCR| Bind Mode Thread WARNING! Loaded No IOClasses!"
 		}
 		Suspend, On
 		global InterfaceSetDetectionState := ObjShare(this.SetDetectionState.Bind(this))
@@ -44,7 +48,7 @@ class _BindMapper {
 		IOClassMappings := {}
 		IOClassMappings := this.IndexedToAssoc(ObjShare(IOClassMappingsPtr))
 		for name, ret in IOClassMappings {
-			;OutputDebug % "UCR| BindModeThread Starting watcher " name " with return type " ret
+			;OutputDebug `% "UCR| BindModeThread Starting watcher " name " with return type " ret
 			this.IOClasses[name].SetDetectionState(state, ret)
 		}
 		this.DetectionState := state
@@ -55,7 +59,7 @@ class _BindMapper {
 	; So it is converted to an indexed array of objects, this converts it back.
 	IndexedToAssoc(arr){
 		ret := {}
-		Loop % arr.length(){
+		Loop `% arr.length(){
 			obj := arr[A_Index], ret[obj.k] := obj.v
 		}
 		return ret
@@ -69,8 +73,8 @@ class _BindMapper {
 		}
 		
 		SetDetectionState(state, ReturnIOClass){
-			;OutputDebug % "Turning Hotkeys " (state ? "On" : "Off")
-			Suspend, % (state ? "Off", "On")
+			;OutputDebug `% "Turning Hotkeys " (state ? "On" : "Off")
+			Suspend, `% (state ? "Off", "On")
 		}
 	}
 	
@@ -116,24 +120,24 @@ class _BindMapper {
 				Loop 2 {
 					blk := this.DebugMode = 2 || (this.DebugMode = 1 && i <= 2) ? "~" : ""
 					fn := this.InputEvent.Bind(this, updown[A_Index].e, i)
-					hotkey, % pfx blk n updown[A_Index].s, % fn, % "On"
+					hotkey, `% pfx blk n updown[A_Index].s, `% fn, `% "On"
 				}
 			}
 			i := 14, n := "NumpadEnter"	; Use 0xE for Nupad Enter
 			Loop 2 {
 				blk := this.DebugMode = 2 || (this.DebugMode = 1 && i <= 2) ? "~" : ""
 				fn := this.InputEvent.Bind(this, updown[A_Index].e, i)
-				hotkey, % pfx blk n updown[A_Index].s, % fn, % "On"
+				hotkey, `% pfx blk n updown[A_Index].s, `% fn, `% "On"
 			}
 			/*
 			; Cycle through all Joystick Buttons
 			Loop 8 {
 				j := A_Index
-				Loop % this.JoystickCaps[j].btns {
+				Loop `% this.JoystickCaps[j].btns {
 					btn := A_Index
 					n := j "Joy" A_Index
 					fn := this._JoystickButtonDown.Bind(this, 1, 2, btn, j)
-					hotkey, % pfx n, % fn, % "On"
+					hotkey, `% pfx n, `% fn, `% "On"
 				}
 			}
 			*/
@@ -141,7 +145,7 @@ class _BindMapper {
 		}
 		
 		InputEvent(e, i){
-			;tooltip % "code: " i ", e: " e
+			;tooltip `% "code: " i ", e: " e
 			this.Callback.Call(e, i, 0, this.ReturnIOClass)
 		}
 	}
@@ -173,13 +177,13 @@ class _BindMapper {
 			this.GetJoystickCaps()
 			Loop 8 {
 				j := A_Index
-				Loop % this.JoystickCaps[j].btns {
+				Loop `% this.JoystickCaps[j].btns {
 					btn := A_Index
 					n := j "Joy" A_Index
 					fn := this.InputEvent.Bind(this, 1, btn, j)
-					hotkey, % n, % fn, % "On"
+					hotkey, `% n, `% fn, `% "On"
 					fn := this.InputEvent.Bind(this, 0, btn, j)
-					hotkey, % n " up", % fn, % "On"
+					hotkey, `% n " up", `% fn, `% "On"
 				}
 			}
 		}
@@ -220,7 +224,7 @@ class _BindMapper {
 			this.ReturnIOClass := ReturnIOClass
 			fn := this.HatWatcherFn
 			t := state ? 10 : "Off"
-			SetTimer, % fn, % t
+			SetTimer, `% fn, `% t
 		}
 		
 		HatWatcher(){
@@ -244,3 +248,15 @@ class _BindMapper {
 		}
 	}
 }
+
+
+
+  ObjShare(obj){
+	static IDispatch,set:=VarSetCapacity(IDispatch, 16), init := NumPut(0x46000000000000c0, NumPut(0x20400, IDispatch, "int64"), "int64")
+	if IsObject(obj)
+		return  LresultFromObject(&IDispatch, 0, &obj)
+	else if ObjectFromLresult(obj, &IDispatch, 0, getvar(com:=0))
+		return MessageBox(NULL,A_ThisFunc ": LResult Object could not be created","Error",0)
+	return ComObject(9,com,1)
+}
+)

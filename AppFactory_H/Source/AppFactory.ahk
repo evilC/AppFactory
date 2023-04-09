@@ -1,4 +1,6 @@
-#include %A_LineFile%\..\JSON.ahk
+#include %A_LineFile%\..\cJSON.ahk
+#include %A_LineFile%\..\BindModeThread.ahk
+#include %A_LineFile%\..\InputThread.ahk
 
 Class AppFactory {
 	_ThreadHeader := "`n#Persistent`n#NoTrayIcon`n#MaxHotkeysPerInterval 9999`n"
@@ -31,9 +33,10 @@ Class AppFactory {
 	; ====================== PRIVATE METHODS. USER SCRIPTS SHOULD NOT CALL THESE ========================
 	__New(hwnd := 0){
 		this._SettingsFile := RegExReplace(A_ScriptName, ".ahk|.exe", ".ini")
-
-		this.InitBindMode()
-		this.InitInputThread()
+		Global BindModeThread_Script 
+		Global InPutThread_Script
+		this.InitBindMode(BindModeThread_Script)
+		this.InitInputThread(InPutThread_Script)
 		
 		if (hwnd == 0)
 			Gui, +Hwndhwnd
@@ -61,7 +64,8 @@ Class AppFactory {
 	}
 	
 	_SaveSettings(){
-		FileReplace(JSON.Dump(this.Settings, ,true), this._SettingsFile)
+		; FileReplace(JSON.Dump(this.Settings, ,true), this._SettingsFile)
+		FileReplace(JSON.Dump(this.Settings), this._SettingsFile) ; cJson
 	}
 	
 	; ============================================================================================
@@ -148,7 +152,7 @@ Class AppFactory {
 		guid := 0			; The unique ID/Name for this IOControl
 		Callback := 0		; Holds the user's callback for this IOControl
 		BindObject := 0		; Holds the BindObject describing the current binding
-		State := 0			; The State of the input. Only really used for Repeat Suppression
+		State := 0			; The State of the input. Only really used for Repeat Suppress_Repeation
 		
 		static _Modifiers := ({91: {s: "#", v: "<"},92: {s: "#", v: ">"}
 		,160: {s: "+", v: "<"},161: {s: "+", v: ">"}
@@ -175,7 +179,7 @@ Class AppFactory {
 			Menu, % this.id, Add, % "Wild", % fn
 			
 			fn := this.IOControlChoiceMade.Bind(this, 4)
-			Menu, % this.id, Add, % "Suppress Repeats", % fn
+			Menu, % this.id, Add, % "Suppress_Repeat", % fn
 			
 			fn := this.IOControlChoiceMade.Bind(this, 5)
 			Menu, % this.id, Add, % "Clear", % fn
@@ -212,9 +216,9 @@ Class AppFactory {
 				this.SetMenuCheckState("Wild")
 				this.BindModeEnded(this.BindObject)
 			} else if (val == 4){
-				; Suppress Repeats
-				this.BindObject.BindOptions.Suppress := !this.BindObject.BindOptions.Suppress
-				this.SetMenuCheckState("Suppress")
+				; Suppress_Repeat Repeats
+				this.BindObject.BindOptions.Suppress_Repeat := !this.BindObject.BindOptions.Suppress_Repeat
+				this.SetMenuCheckState("Suppress_Repeat")
 				this.BindModeEnded(this.BindObject)
 			} else if (val == 5){
 				; Clear
@@ -236,14 +240,16 @@ Class AppFactory {
 		
 		OpenMenu(){
 			ControlGetPos, cX, cY, cW, cH,, % "ahk_id " this.hReadout
-			Menu, % this.id, Show, % cX+1, % cY + cH
+			; Menu, % this.id, Color, E4E4E4
+			Menu, % this.id, Show, % cX+cW-(cH//2), % cY + (cH//2)  ; + cH
+			; Menu, % this.id, Show, % cX+1, % cY + cH
 		}
 		
 		; Builds a human-readable form of the BindObject
 		BuildHumanReadable(){
 			str := ""
 			if (!this.BindObject.IOClass){
-				str := "Select an Input Button..."
+				str := "_"
 			} else if (this.BindObject.IOClass == "AHK_KBM_Input"){
 				max := this.BindObject.Binding.length()
 				Loop % max {
@@ -286,9 +292,10 @@ Class AppFactory {
 	
 	; ====================================== BINDMODE THREAD ==============================================
 	; An additional thread that is always running and handles detection of input while in Bind Mode (User selecting hotkeys)
-	InitBindMode(){
+	InitBindMode(BindModeThread_Script){
 		;~ FileRead, Script, % A_ScriptDir "\BindModeThread.ahk"
-		FileRead, Script, % A_LineFile "\..\BindModeThread.ahk"
+		;~ FileRead, Script, % A_LineFile "\..\BindModeThread.ahk"
+		Script := BindModeThread_Script
 		this.__BindModeThread := AhkThread(this._ThreadHeader "`nBindMapper := new _BindMapper(" ObjShare(this.ProcessBindModeInput.Bind(this)) ")`n" this._ThreadFooter Script)
 		While !this.__BindModeThread.ahkgetvar.autoexecute_done
 			Sleep 50 ; wait until variable has been set.
@@ -299,9 +306,9 @@ Class AppFactory {
 		
 		Gui, +HwndhOld
 		Gui, new, +HwndHwnd
-		Gui +ToolWindow -Border
-		Gui, Font, S15
-		Gui, Color, Red
+		Gui +ToolWindow -Border -SysMenu +AlwaysOnTop
+		Gui, Font, S16 cWhite
+		Gui, Color, Red 
 		this.hBindModePrompt := hwnd
 		Gui, Add, Text, Center, Press the button(s) you wish to bind to this control.`n`nBind Mode will end when you release a key.
 		Gui, % hOld ":Default"
@@ -358,10 +365,16 @@ Class AppFactory {
 	ProcessBindModeInput(e, i, deviceid, IOClass){
 		;ToolTip % "e " e ", i " i ", deviceid " deviceid ", IOClass " IOClass
 		;if (ObjHasKey(this._Modifiers, i))
+		if (i=1)
+		return
 		if (this.SelectedBinding.IOClass && (this.SelectedBinding.IOClass != IOClass)){
 			; Changed binding IOCLass part way through.
 			if (e){
+				SoundGet, MasterVolume
+    			SoundSet, 30
 				SoundBeep, 500, 100
+    			SoundSet, MasterVolume
+				
 			}
 			return
 		}
@@ -376,13 +389,19 @@ Class AppFactory {
 			if (this.AHK_KBM_Input.IsModifier(i)){
 				if (max > this.ModifierCount){
 					; Modifier pressed after end key
-					SoundBeep, 500, 100
+				SoundGet, MasterVolume
+    			SoundSet, 30
+				SoundBeep, 500, 100
+    			SoundSet, MasterVolume
 					return
 				}
 				this.ModifierCount++
 			} else if (max > this.ModifierCount) {
 				; Second End Key pressed after first held
+				SoundGet, MasterVolume
+    			SoundSet, 30
 				SoundBeep, 500, 100
+    			SoundSet, MasterVolume
 				return
 			}
 			this.SelectedBinding.IOClass := IOClass
@@ -399,9 +418,11 @@ Class AppFactory {
 	; ====================================== INPUT THREAD ==============================================
 	; An additional thread that is always running and handles detection of input while in Normal Mode
 	; This is done in an additional thread so that fixes to joystick input (Buttons and Hats) do not have to have loops in the main thread
-	InitInputThread(){
+	InitInputThread(InPutThread_Script){
 		;~ FileRead, Script, % A_ScriptDir "\InputThread.ahk"
-		FileRead, Script, % A_LineFile "\..\InputThread.ahk"
+		;~ FileRead, Script, % A_LineFile "\..\InputThread.ahk"
+		
+		Script:=InPutThread_Script
 		
 		; Cache script for profile InputThreads
 		this._InputThreadScript := this._ThreadFooter Script 
@@ -427,8 +448,8 @@ Class AppFactory {
 	}
 	
 	InputEvent(ControlGUID, e){
-		; Suppress repeats
-		if (this.IOControls[ControlGuid].BindObject.BindOptions.Suppress && (this.IOControls[ControlGuid].State == e))
+		; Suppress_Repeat repeats
+		if (this.IOControls[ControlGuid].BindObject.BindOptions.Suppress_Repeat && (this.IOControls[ControlGuid].State == e))
 			return
 		this.IOControls[ControlGuid].State := e
 		; Fire the callback
@@ -442,6 +463,6 @@ Class AppFactory {
 		DeviceID := 0 		; Device ID, eg Stick ID for Joystick input or vGen output
 		Binding := []		; Codes of the input(s) for the Binding. Is an indexed array once set
 							; Normally a single element, but for KBM could be up to 4 modifiers plus a key/button
-		BindOptions := {Block: 0, Wild: 0, Suppress: 0}
+		BindOptions := {Block: 1, Wild: 0, Suppress_Repeat: 0}
 	}
 }
